@@ -1,24 +1,29 @@
-from .masks import get_mask_card_number, get_mask_account
-from datetime import datetime
+def get_mask_card_number(card_number: str) -> str:
+    """
+
+    Args:
+        card_number: Номер карты (16 цифр)
+
+    Returns:
+        Замаскированный номер в формате XXXX XX** **** XXXX
+    """
+    if len(card_number) != 16 or not card_number.isdigit():
+        raise ValueError("Номер карты должен содержать 16 цифр")
+
+    return f"{card_number[:4]} {card_number[4:6]}** **** {card_number[-4:]}"
 
 
-def mask_account_card(data: str) -> str:
-    """Маскирует карту или счет."""
-    parts = data.split()
-    if len(parts) < 2:
-        raise ValueError("Некорректный формат")
+def get_mask_account_number(account_number: str) -> str:
+    """
+    Маскирует номер банковского счета.
 
-    card_type = " ".join(parts[:-1])
-    number = parts[-1]
+    Args:
+        account_number: Номер счета (20 цифр)
 
-    if card_type.lower() == "счет":
-        return f"{card_type} {get_mask_account(number)}"
-    else:
-        return f"{card_type} {get_mask_card_number(number)}"
+    Returns:
+        Замаскированный номер в формате **XXXX
+    """
+    if len(account_number) != 20 or not account_number.isdigit():
+        raise ValueError("Номер счета должен содержать 20 цифр")
 
-
-def get_date(date_string: str) -> str:
-    """Форматирует дату."""
-    date_part = date_string.split('T')[0]
-    year, month, day = date_part.split('-')
-    return f"{day}.{month}.{year}"
+    return f"**{account_number[-4:]}"

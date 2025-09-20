@@ -1,7 +1,11 @@
-import unittest
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.processing import filter_by_state, sort_by_date
-
-
 # #class TestProcessingFunctions(unittest.TestCase):
 #
 #     def setUp(self):
@@ -59,81 +63,101 @@ from src.processing import filter_by_state, sort_by_date
 #
 #     def test_empty_data(self):
 #         self.assertEqual(filter_by_state([]), [])
-#         self.assertEqual(sort_by_date([]), [])
-
-import sys
-import os
-
-# Добавляем корневую директорию в Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from src.processing import filter_by_state, sort_by_date
-import pytest
-
-
+#         self.assertEqual(sort_by_date([]
 class TestProcessing:
     """Тесты для модуля processing."""
 
     def test_filter_by_state_executed(self):
         """Тестирование фильтрации по статусу EXECUTED."""
         operations = [
-            {'id': 1, 'state': 'EXECUTED', 'date': '2024-01-01T10:00:00'},
-            {'id': 2, 'state': 'CANCELED', 'date': '2024-01-02T10:00:00'}
+            {"id": 1, "state": "EXECUTED", "date": "2024-01-01T10:00:00"},
+            {"id": 2, "state": "CANCELED", "date": "2024-01-02T10:00:00"},
         ]
-        result = filter_by_state(operations, 'EXECUTED')
+        result = filter_by_state(operations, "EXECUTED")
         assert len(result) == 1
-        assert result[0]['state'] == 'EXECUTED'
+        assert result[0]["state"] == "EXECUTED"
 
     def test_filter_by_state_canceled(self):
         """Тестирование фильтрации по статусу CANCELED."""
         operations = [
-            {'id': 1, 'state': 'EXECUTED', 'date': '2024-01-01T10:00:00'},
-            {'id': 2, 'state': 'CANCELED', 'date': '2024-01-02T10:00:00'}
+            {"id": 1, "state": "EXECUTED", "date": "2024-01-01T10:00:00"},
+            {"id": 2, "state": "CANCELED", "date": "2024-01-02T10:00:00"},
         ]
-        result = filter_by_state(operations, 'CANCELED')
+        result = filter_by_state(operations, "CANCELED")
         assert len(result) == 1
-        assert result[0]['state'] == 'CANCELED'
+        assert result[0]["state"] == "CANCELED"
 
     def test_filter_by_state_default(self):
         """Тестирование фильтрации со статусом по умолчанию."""
         operations = [
-            {'id': 1, 'state': 'EXECUTED', 'date': '2024-01-01T10:00:00'},
-            {'id': 2, 'state': 'CANCELED', 'date': '2024-01-02T10:00:00'}
+            {"id": 1, "state": "EXECUTED", "date": "2024-01-01T10:00:00"},
+            {"id": 2, "state": "CANCELED", "date": "2024-01-02T10:00:00"},
         ]
-        result = filter_by_state(operations)  # По умолчанию 'EXECUTED'
+        result = filter_by_state(operations)
         assert len(result) == 1
-        assert result[0]['state'] == 'EXECUTED'
+        assert result[0]["state"] == "EXECUTED"
+
+    def test_filter_by_state_empty_list(self):
+        """Тестирование фильтрации пустого списка."""
+        result = filter_by_state([])
+        assert result == []
+
+    def test_filter_by_state_no_matching(self):
+        """Тестирование фильтрации когда нет совпадений."""
+        operations = [{"id": 1, "state": "PENDING", "date": "2024-01-01T10:00:00"}]
+        result = filter_by_state(operations, "EXECUTED")
+        assert result == []
 
     def test_sort_by_date_descending(self):
         """Тестирование сортировки по убыванию даты."""
         operations = [
-            {'id': 1, 'date': '2024-01-01T10:00:00'},
-            {'id': 2, 'date': '2024-01-02T10:00:00'}
+            {"id": 1, "date": "2024-01-01T10:00:00"},
+            {"id": 2, "date": "2024-01-02T10:00:00"},
         ]
         result = sort_by_date(operations, True)
-        assert result[0]['date'] == '2024-01-02T10:00:00'
-        assert result[1]['date'] == '2024-01-01T10:00:00'
+        assert result[0]["date"] == "2024-01-02T10:00:00"
+        assert result[1]["date"] == "2024-01-01T10:00:00"
 
     def test_sort_by_date_ascending(self):
         """Тестирование сортировки по возрастанию даты."""
         operations = [
-            {'id': 1, 'date': '2024-01-02T10:00:00'},
-            {'id': 2, 'date': '2024-01-01T10:00:00'}
+            {"id": 1, "date": "2024-01-02T10:00:00"},
+            {"id": 2, "date": "2024-01-01T10:00:00"},
         ]
         result = sort_by_date(operations, False)
-        assert result[0]['date'] == '2024-01-01T10:00:00'
-        assert result[1]['date'] == '2024-01-02T10:00:00'
+        assert result[0]["date"] == "2024-01-01T10:00:00"
+        assert result[1]["date"] == "2024-01-02T10:00:00"
 
     def test_sort_by_date_default(self):
         """Тестирование сортировки с порядком по умолчанию."""
         operations = [
-            {'id': 1, 'date': '2024-01-01T10:00:00'},
-            {'id': 2, 'date': '2024-01-02T10:00:00'}
+            {"id": 1, "date": "2024-01-01T10:00:00"},
+            {"id": 2, "date": "2024-01-02T10:00:00"},
         ]
-        result = sort_by_date(operations)  # По умолчанию reverse=True
-        assert result[0]['date'] == '2024-01-02T10:00:00'
+        result = sort_by_date(operations)
+        assert result[0]["date"] == "2024-01-02T10:00:00"
 
-    def test_empty_data(self):
-        """Тестирование с пустыми данными."""
-        assert filter_by_state([]) == []
-        assert sort_by_date([]) == []
+    def test_sort_by_date_empty_list(self):
+        """Тестирование сортировки пустого списка."""
+        result = sort_by_date([])
+        assert result == []
+
+    def test_sort_by_date_single_item(self):
+        """Тестирование сортировки списка с одним элементом."""
+        operations = [{"id": 1, "date": "2024-01-01T10:00:00"}]
+        result = sort_by_date(operations)
+        assert result == operations
+
+    def test_sort_by_date_invalid_date(self):
+        """Тестирование сортировки с некорректной датой."""
+        operations = [
+            {"id": 1, "date": "2024-01-01T10:00:00"},
+            {"id": 2, "date": ""},
+            {"id": 3, "date": "invalid-date"},
+        ]
+        result = sort_by_date(operations)
+        # Функция должна обработать некорректные даты и поместить их в начало/конец
+        assert len(result) == 3
+        # Проверяем что валидная дата на своем месте
+        valid_dates = [op for op in result if op["date"] == "2024-01-01T10:00:00"]
+        assert len(valid_dates) == 1
