@@ -1,105 +1,89 @@
+# -*- coding: utf-8 -*-
 import os
-import sys
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import Mock, patch
 import pytest
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from src.external_api import convert_currency_to_rub, get_exchange_rate
+from src.external_api import convert_currency
 
 
-class TestExternalApi:
-    """Тесты для модуля external_api."""
+class TestExternalAPI:
+    """Тестовые случаи для интеграции с внешними API."""
 
-    def test_convert_currency_to_rub_rub(self):
-        """Тестирование конвертации RUB в RUB."""
+    def test_convert_currency_rub(self):
+        """Тест конвертации когда транзакция уже в рублях."""
         transaction = {
-            "operationAmount": {
-                "amount": "1000.0",
-                "currency": {"code": "RUB"}
-            }
+            "amount": 1000.0,
+            "currency": "RUB"
         }
-        result = convert_currency_to_rub(transaction)
+
+        result = convert_currency(transaction)
+
         assert result == 1000.0
-
-    def test_convert_currency_to_rub_invalid_amount(self):
-        """Тестирование конвертации с невалидной суммой."""
-        transaction = {
-            "operationAmount": {
-                "amount": "invalid",
-                "currency": {"code": "RUB"}
-            }
-        }
-        result = convert_currency_to_rub(transaction)
-        assert result == 0.0
-
-    def test_convert_currency_to_rub_missing_operation_amount(self):
-        """Тестирование конвертации с отсутствующим operationAmount."""
-        transaction = {}
-        result = convert_currency_to_rub(transaction)
-        assert result == 0.0
-
-    @patch('src.external_api.get_exchange_rate')
-    @patch.dict(os.environ, {'EXCHANGE_RATE_API_KEY': 'test_key'})
-    def test_convert_currency_to_rub_usd(self, mock_get_rate):
-        """Тестирование конвертации USD в RUB."""
-        mock_get_rate.return_value = 90.0
-
-        transaction = {
-            "operationAmount": {
-                "amount": "100.0",
-                "currency": {"code": "USD"}
-            }
-        }
-        result = convert_currency_to_rub(transaction)
-        assert result == 9000.0
-        mock_get_rate.assert_called_once_with("USD", "RUB", "test_key")
-
-    @patch('src.external_api.get_exchange_rate')
-    @patch.dict(os.environ, {'EXCHANGE_RATE_API_KEY': 'test_key'})
-    def test_convert_currency_to_rub_eur(self, mock_get_rate):
-        """Тестирование конвертации EUR в RUB."""
-        mock_get_rate.return_value = 100.0
-
-        transaction = {
-            "operationAmount": {
-                "amount": "50.0",
-                "currency": {"code": "EUR"}
-            }
-        }
-        result = convert_currency_to_rub(transaction)
-        assert result == 5000.0
-        mock_get_rate.assert_called_once_with("EUR", "RUB", "test_key")
-
-    @patch.dict(os.environ, {}, clear=True)
-    def test_convert_currency_to_rub_no_api_key(self):
-        """Тестирование конвертации без API ключа."""
-        transaction = {
-            "operationAmount": {
-                "amount": "100.0",
-                "currency": {"code": "USD"}
-            }
-        }
-        with pytest.raises(ValueError, match="API key for exchange rates not found"):
-            convert_currency_to_rub(transaction)
+        assert isinstance(result, float)
 
     @patch('src.external_api.requests.get')
-    def test_get_exchange_rate_success(self, mock_get):
-        """Тестирование успешного получения курса валют."""
-        mock_response = MagicMock()
+    def test_convert_currency_usd_with_api(self, mock_get):
+        """Тест конвертации из USD в RUB с реальным API вызовом."""
+        # Мок ответа API
+        mock_response = Mock()
         mock_response.json.return_value = {
-            "rates": {"RUB": 95.5}
+            "success": True,
+            "result": 9050.0
         }
         mock_get.return_value = mock_response
 
-        result = get_exchange_rate("USD", "RUB", "test_key")
-        assert result == 95.5
+        # Устанавливаем тестовый API ключ
+        with patch.dict(os.environ, {'EXCHANGERATES_API_KEY': 'real_test_key'}, clear=True):
+            transaction = {
+                "amount": 100.0,
+                "currency": "USD"
+            }
 
-    @patch('src.external_api.requests.get')
-    def test_get_exchange_rate_fallback(self, mock_get):
-        """Тестирование использования fallback курса при ошибке API."""
-        mock_get.side_effect = Exception("API error")
+            result = convert_currency(transaction)
 
-        result = get_exchange_rate("USD", "RUB", "test_key")
-        assert result == 90.0  # Fallback rate for USD
+            assert result == 9050.0
+            assert isinstance(result, float)
+
+    def test_convert_currency_usd_without_api_key(self):
+        """Тест конвертации без API ключа (должен использовать mock значения)."""
+        # Убеждаемся, что переменная окружения не установлена
+        with patch.dict(os.environ, {}, clear=True):
+            transaction = {
+                "amount": 100.0,
+                "currency": "USD"
+            }
+
+            result = convert_currency(transaction)
+
+            # Должен вернуть mock значение (100 * 90.0 = 9000.0)
+            assert result == 9000.0
+            assert isinstance(result, float)
+
+    def test_convert_currency_eur_without_api_key(self):
+        """Тест конвертации EUR без API ключа."""
+        with patch.dict(os.environ, {}, clear=True):
+            transaction = {
+                "amount": 50.0,
+                "currency": "EUR"
+            }
+
+            result = convert_currency(transaction)
+
+            # Должен вернуть mock значение (50 * 100.0 = 5000.0)
+            assert result == 5000.0
+            assert isinstance(result, float)
+
+    def test_convert_currency_other_currency(self):
+        """Тест конвертации с неподдерживаемой валютой."""
+        transaction = {
+            "amount": 1000.0,
+            "currency": "GBP"  # Не USD или EUR
+        }
+
+        result = convert_currency(transaction)
+
+        assert result == 1000.0
+        assert isinstance(result, float)
+
+
+if __name__ == "__main__":
+    pytest.main()

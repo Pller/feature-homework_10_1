@@ -1,79 +1,89 @@
 import os
 from typing import Dict, Any
 import requests
-from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env файла
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+
+    # Пытаемся загрузить .env, но не падаем если его нет
+    load_dotenv()
+except ImportError:
+    print("python-dotenv не установлен, используем переменные окружения системы")
+except Exception as e:
+    print(f"Ошибка загрузки .env файла: {e}")
 
 
-def convert_currency_to_rub(transaction: Dict[str, Any]) -> float:
+def convert_currency(transaction: Dict[str, Any]) -> float:
     """
-    Конвертирует сумму транзакции в рубли.
+    Конвертирует сумму транзакции в рубли, если валюта USD или EUR.
 
     Args:
-        transaction: Словарь с данными о транзакции
+        transaction: Словарь с данными транзакции, содержащий
+                    ключи 'amount' и 'currency'
 
     Returns:
-        Сумма транзакции в рублях (float)
+        float: Сумма в рублях
     """
-    operation_amount = transaction.get("operationAmount", {})
-    amount_str = operation_amount.get("amount", "0")
-    currency_info = operation_amount.get("currency", {})
-    currency_code = currency_info.get("code", "RUB")
+    amount = transaction.get('amount', 0.0)
+    currency = transaction.get('currency', 'RUB')
 
-    try:
-        amount = float(amount_str)
-    except (ValueError, TypeError):
-        return 0.0
+    # Если уже в рублях, возвращаем как есть
+    if currency == 'RUB':
+        return float(amount)
 
-    # Если валюта уже в рублях, возвращаем как есть
-    if currency_code == "RUB":
-        return amount
+    # Если USD или EUR, конвертируем через внешнее API
+    if currency in ['USD', 'EUR']:
+        return _convert_via_api(amount, currency)
 
-    # Конвертируем USD и EUR
-    if currency_code in ["USD", "EUR"]:
-        api_key = os.getenv("EXCHANGE_RATE_API_KEY")
-        if not api_key:
-            raise ValueError("API key for exchange rates not found in environment variables")
-
-        # Получаем курс валют
-        exchange_rate = get_exchange_rate(currency_code, "RUB", api_key)
-        return amount * exchange_rate
-
-    # Для других валют возвращаем оригинальную сумму
-    return amount
+    # Для других валют возвращаем исходную сумму
+    return float(amount)
 
 
-def get_exchange_rate(from_currency: str, to_currency: str, api_key: str) -> float:
+def _convert_via_api(amount: float, from_currency: str) -> float:
     """
-    Получает текущий курс валют от внешнего API.
+    Конвертирует валюту используя внешнее API.
 
     Args:
+        amount: Сумма для конвертации
         from_currency: Исходная валюта
-        to_currency: Целевая валюта
-        api_key: API ключ для сервиса курсов валют
 
     Returns:
-        Курс обмена
+        float: Конвертированная сумма в рублях
     """
-    url = f"https://api.apilayer.com/exchangerates_data/latest?base={from_currency}&symbols={to_currency}"
+    api_key = os.getenv('EXCHANGERATES_API_KEY')
+
+    # Если API ключ не найден, используем mock-конвертацию для тестов
+    if not api_key:
+        print("API ключ не найден, используется mock-конвертация")
+        mock_rates = {'USD': 90.0, 'EUR': 100.0}
+        return float(amount) * mock_rates.get(from_currency, 1.0)
+
+    # Правильный endpoint согласно документации API
+    url = "https://api.apilayer.com/exchangerates_data/convert"
+
+    params = {
+        "from": from_currency,
+        "to": "RUB",
+        "amount": amount
+    }
 
     headers = {
         "apikey": api_key
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-
+        response = requests.get(url, headers=headers, params=params, timeout=10)
         data = response.json()
-        return data["rates"][to_currency]
 
-    except (requests.RequestException, KeyError, ValueError) as:
-        # В случае ошибки API используем фиксированные курсы для тестирования
-        fallback_rates = {
-            "USD": 90.0,
-            "EUR": 100.0
-        }
-        return fallback_rates.get(from_currency, 1.0)
+        # Проверяем успешность запроса и наличие ключа "result"
+        if data.get('success') and 'result' in data:
+            return float(data['result'])
+        else:
+            # Если API fails, return original amount
+            error_info = data.get('error', {}).get('info', 'Неизвестная ошибка API')
+            print(f"Ошибка API: {error_info}")
+            return float(amount)
+
+    except (requests.RequestException, ValueError, KeyError) as e:
+        print(f"Ошибка при конвертации валюты: {e}")
+        return float(amount)

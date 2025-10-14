@@ -4,23 +4,31 @@ from typing import List, Dict, Any
 
 def read_json_file(file_path: str) -> List[Dict[str, Any]]:
     """
-    Читает JSON-файл и возвращает список словарей с данными о транзакциях.
+    Читает JSON файл и возвращает список транзакций.
 
     Args:
-        file_path: Путь к JSON-файлу
+        file_path: Путь к JSON файлу
 
     Returns:
-        Список словарей с данными о транзакциях или пустой список в случае ошибки
+        List[Dict[str, Any]]: Список транзакций или пустой список при ошибке
     """
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
 
-        # Проверяем что данные являются списком
+        # Убеждаемся что данные это список
         if isinstance(data, list):
             return data
         else:
+            print(f"Предупреждение: JSON файл {file_path} не содержит список")
             return []
 
-    except (FileNotFoundError, json.JSONDecodeError, TypeError):
+    except FileNotFoundError:
+        print(f"Ошибка: Файл {file_path} не найден")
+        return []
+    except json.JSONDecodeError:
+        print(f"Ошибка: Файл {file_path} содержит некорректный JSON")
+        return []
+    except Exception as e:
+        print(f"Ошибка чтения файла {file_path}: {e}")
         return []
