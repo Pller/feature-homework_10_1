@@ -2,41 +2,39 @@ import os
 from typing import Dict, Any
 import requests
 
-try:
-    from dotenv import load_dotenv
-
-    # Пытаемся загрузить .env, но не падаем если его нет
-    load_dotenv()
-except ImportError:
-    print("python-dotenv не установлен, используем переменные окружения системы")
-except Exception as e:
-    print(f"Ошибка загрузки .env файла: {e}")
-
 
 def convert_currency(transaction: Dict[str, Any]) -> float:
     """
     Конвертирует сумму транзакции в рубли, если валюта USD или EUR.
 
     Args:
-        transaction: Словарь с данными транзакции, содержащий
-                    ключи 'amount' и 'currency'
+        transaction: Словарь с данными транзакции
 
     Returns:
         float: Сумма в рублях
     """
-    amount = transaction.get('amount', 0.0)
-    currency = transaction.get('currency', 'RUB')
+    # Получаем данные из структуры operationAmount
+    operation_amount = transaction.get('operationAmount', {})
+    amount_str = operation_amount.get('amount', '0.0')
+    currency_data = operation_amount.get('currency', {})
+    currency = currency_data.get('code', 'RUB')
+
+    # Конвертируем строку в float
+    try:
+        amount = float(amount_str)
+    except (ValueError, TypeError):
+        amount = 0.0
 
     # Если уже в рублях, возвращаем как есть
     if currency == 'RUB':
-        return float(amount)
+        return amount
 
     # Если USD или EUR, конвертируем через внешнее API
     if currency in ['USD', 'EUR']:
         return _convert_via_api(amount, currency)
 
     # Для других валют возвращаем исходную сумму
-    return float(amount)
+    return amount
 
 
 def _convert_via_api(amount: float, from_currency: str) -> float:
@@ -52,11 +50,9 @@ def _convert_via_api(amount: float, from_currency: str) -> float:
     """
     api_key = os.getenv('EXCHANGERATES_API_KEY')
 
-    # Если API ключ не найден, используем mock-конвертацию для тестов
     if not api_key:
-        print("API ключ не найден, используется mock-конвертация")
-        mock_rates = {'USD': 90.0, 'EUR': 100.0}
-        return float(amount) * mock_rates.get(from_currency, 1.0)
+        # Без API ключа не можем конвертировать, возвращаем исходную сумму
+        return amount
 
     # Правильный endpoint согласно документации API
     url = "https://api.apilayer.com/exchangerates_data/convert"
@@ -80,10 +76,7 @@ def _convert_via_api(amount: float, from_currency: str) -> float:
             return float(data['result'])
         else:
             # Если API fails, return original amount
-            error_info = data.get('error', {}).get('info', 'Неизвестная ошибка API')
-            print(f"Ошибка API: {error_info}")
-            return float(amount)
+            return amount
 
-    except (requests.RequestException, ValueError, KeyError) as e:
-        print(f"Ошибка при конвертации валюты: {e}")
-        return float(amount)
+    except (requests.RequestException, ValueError, KeyError):
+        return amount
