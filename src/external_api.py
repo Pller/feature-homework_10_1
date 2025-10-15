@@ -1,6 +1,10 @@
 import os
 from typing import Dict, Any
 import requests
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
 def convert_currency(transaction: Dict[str, Any]) -> float:
@@ -27,31 +31,14 @@ def convert_currency(transaction: Dict[str, Any]) -> float:
 
     # Если уже в рублях, возвращаем как есть
     if currency == 'RUB':
-        return float(amount)  # Явное преобразование в float
+        return float(amount)
 
     # Если USD или EUR, конвертируем через внешнее API
     if currency in ['USD', 'EUR']:
         return _convert_via_api(amount, currency)
 
     # Для других валют возвращаем исходную сумму
-    return float(amount)  # Явное преобразование в float
-
-
-def _load_env() -> None:
-    """Загружает переменные окружения из .env файла."""
-    try:
-        # Простая загрузка .env без сторонних библиотек
-        env_path = '.env'
-        if os.path.exists(env_path):
-            with open(env_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        os.environ[key.strip()] = value.strip()
-    except Exception:
-        # Если не получилось загрузить .env, используем системные переменные
-        pass
+    return float(amount)
 
 
 def _convert_via_api(amount: float, from_currency: str) -> float:
@@ -65,9 +52,6 @@ def _convert_via_api(amount: float, from_currency: str) -> float:
     Returns:
         float: Конвертированная сумма в рублях
     """
-    # Загружаем переменные окружения
-    _load_env()
-
     api_key = os.getenv('EXCHANGERATES_API_KEY')
 
     if not api_key:
@@ -95,6 +79,7 @@ def _convert_via_api(amount: float, from_currency: str) -> float:
         if data.get('success') and 'result' in data:
             return float(data['result'])
         else:
+            # Если API fails, return original amount
             return float(amount)
 
     except (requests.RequestException, ValueError, KeyError):
