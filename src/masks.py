@@ -1,78 +1,88 @@
 ﻿"""Модуль для работы с масками карт и счетов."""
 import logging
-import os
-from typing import Optional
 
-# Настройка логера для модуля masks
-def setup_masks_logger() -> logging.Logger:
-    """Настраивает и возвращает логер для модуля masks."""
-    logger = logging.getLogger('masks')
-    logger.setLevel(logging.DEBUG)
-    
-    # Создаем папку logs если ее нет
-    os.makedirs('logs', exist_ok=True)
-    
-    # File handler с перезаписью файла при каждом запуске
-    file_handler = logging.FileHandler('logs/masks.log', mode='w', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-    
-    # Форматер логов
-    file_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    file_handler.setFormatter(file_formatter)
-    
-    # Добавляем handler к логеру
-    logger.addHandler(file_handler)
-    
-    return logger
 
-# Создаем логер
-masks_logger = setup_masks_logger()
-
-def mask_account_number(account_number: str) -> Optional[str]:
+def get_mask_card_number(card_number: str) -> str:
     """
-    Маскирует номер счета, оставляя видимыми только последние 4 цифры.
-    
-    Args:
-        account_number: Номер счета
-        
-    Returns:
-        str: Замаскированный номер счета или None при ошибке
-    """
-    try:
-        if not account_number or len(account_number) < 4:
-            masks_logger.error(f"Некорректный номер счета: {account_number}")
-            return None
-            
-        masked = f"**{account_number[-4:]}"
-        masks_logger.info(f"Успешно замаскирован номер счета: {account_number} -> {masked}")
-        return masked
-        
-    except Exception as e:
-        masks_logger.error(f"Ошибка при маскировке счета {account_number}: {e}")
-        return None
+    Возвращает маску номера карты.
 
-def mask_card_number(card_number: str) -> Optional[str]:
-    """
-    Маскирует номер карты, оставляя видимыми первые 6 и последние 4 цифры.
-    
     Args:
         card_number: Номер карты
-        
+
     Returns:
-        str: Замаскированный номер карты или None при ошибке
+        str: Маска номера карты
+    """
+    if len(card_number) != 16 or not card_number.isdigit():
+        return "Некорректный номер карты"
+
+    return f"{card_number[:4]} {card_number[4:6]}** **** {card_number[-4:]}"
+
+
+def get_mask_account(account_number: str) -> str:
+    """
+    Возвращает маску номера счета.
+
+    Args:
+        account_number: Номер счета
+
+    Returns:
+        str: Маска номера счета
+    """
+    if len(account_number) != 20 or not account_number.isdigit():
+        return "Некорректный номер счета"
+
+    return f"**{account_number[-4:]}"
+
+
+# Настройка логгера для модуля masks
+logger = logging.getLogger("masks")
+logger.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler("masks.log", encoding="utf-8")
+file_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+
+def mask_card_number_with_log(card_number: str) -> str:
+    """
+    Возвращает маску номера карты с логированием.
+
+    Args:
+        card_number: Номер карты
+
+    Returns:
+        str: Маска номера карты
     """
     try:
-        if not card_number or len(card_number) != 16:
-            masks_logger.error(f"Некорректный номер карты: {card_number}")
-            return None
-            
-        masked = f"{card_number[:4]} {card_number[4:6]}** **** {card_number[-4:]}"
-        masks_logger.info(f"Успешно замаскирован номер карты: {card_number} -> {masked}")
-        return masked
-        
+        result = get_mask_card_number(card_number)
+        logger.debug(f"Успешное создание маски карты: {card_number} -> {result}")
+        return result
     except Exception as e:
-        masks_logger.error(f"Ошибка при маскировке карты {card_number}: {e}")
-        return None
+        logger.error(f"Ошибка создания маски карты: {card_number} - {e}")
+        return "Ошибка создания маски"
+
+
+def mask_account_number_with_log(account_number: str) -> str:
+    """
+    Возвращает маску номера счета с логированием.
+
+    Args:
+        account_number: Номер счета
+
+    Returns:
+        str: Маска номера счета
+    """
+    try:
+        result = get_mask_account(account_number)
+        logger.debug(f"Успешное создание маски счета: {account_number} -> {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Ошибка создания маски счета: {account_number} - {e}")
+        return "Ошибка создания маски"

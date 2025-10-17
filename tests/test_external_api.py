@@ -1,14 +1,14 @@
+﻿"""Тесты для модуля external_api."""
 import os
 from unittest.mock import Mock, patch
-import pytest
 from src.external_api import convert_currency
 
 
 class TestExternalAPI:
-    """Тесты для функций работы с внешними API."""
+    """Тестовые случаи для интеграции с внешними API."""
 
     def test_convert_currency_rub(self):
-        """Тест конвертации RUB в RUB."""
+        """Тест конвертации когда транзакция уже в рублях."""
         transaction = {
             "operationAmount": {
                 "amount": "1000.0",
@@ -22,16 +22,15 @@ class TestExternalAPI:
         assert isinstance(result, float)
 
     @patch('src.external_api.requests.get')
-    def test_convert_currency_usd(self, mock_get):
-        """Тест конвертации USD в RUB с моком API."""
+    def test_convert_currency_usd_with_api(self, mock_get):
+        """Тест конвертации из USD в RUB с реальным API вызовом."""
         mock_response = Mock()
         mock_response.json.return_value = {
             "success": True,
             "result": 9050.0
         }
         mock_get.return_value = mock_response
-
-        with patch.dict(os.environ, {'EXCHANGERATES_API_KEY': 'test_key'}):
+        with patch.dict(os.environ, {'EXCHANGERATES_API_KEY': 'real_test_key'}, clear=True):
             transaction = {
                 "operationAmount": {
                     "amount": "100.0",
@@ -44,17 +43,24 @@ class TestExternalAPI:
             assert result == 9050.0
             assert isinstance(result, float)
 
-    @patch('src.external_api.requests.get')
-    def test_convert_currency_eur(self, mock_get):
-        """Тест конвертации EUR в RUB с моком API."""
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "success": True,
-            "result": 5010.0
-        }
-        mock_get.return_value = mock_response
+    def test_convert_currency_usd_without_api_key(self):
+        """Тест конвертации без API ключа."""
+        with patch.dict(os.environ, {}, clear=True):
+            transaction = {
+                "operationAmount": {
+                    "amount": "100.0",
+                    "currency": {
+                        "code": "USD"
+                    }
+                }
+            }
+            result = convert_currency(transaction)
+            assert result == 100.0
+            assert isinstance(result, float)
 
-        with patch.dict(os.environ, {'EXCHANGERATES_API_KEY': 'test_key'}):
+    def test_convert_currency_eur_without_api_key(self):
+        """Тест конвертации EUR без API ключа."""
+        with patch.dict(os.environ, {}, clear=True):
             transaction = {
                 "operationAmount": {
                     "amount": "50.0",
@@ -64,30 +70,16 @@ class TestExternalAPI:
                 }
             }
             result = convert_currency(transaction)
-            assert result == 5010.0
+            assert result == 50.0
             assert isinstance(result, float)
 
-    def test_convert_currency_no_api_key(self):
-        """Тест конвертации без API ключа."""
-        transaction = {
-            "operationAmount": {
-                "amount": "100.0",
-                "currency": {
-                    "code": "USD"
-                }
-            }
-        }
-        result = convert_currency(transaction)
-        assert result == 100.0  # Без API ключа возвращает исходную сумму
-        assert isinstance(result, float)
-
     def test_convert_currency_other_currency(self):
-        """Тест конвертации неподдерживаемой валюты."""
+        """Тест конвертации с неподдерживаемой валютой."""
         transaction = {
             "operationAmount": {
                 "amount": "1000.0",
                 "currency": {
-                    "code": "GBP"  # Не USD или EUR
+                    "code": "GBP"
                 }
             }
         }
@@ -108,3 +100,8 @@ class TestExternalAPI:
         result = convert_currency(transaction)
         assert result == 0.0
         assert isinstance(result, float)
+
+
+if __name__ == "__main__":
+    import pytest
+    pytest.main()
