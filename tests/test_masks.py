@@ -1,33 +1,31 @@
 ﻿"""Тесты для модуля masks."""
-import os
-import pytest
-from src.masks import mask_account_number, mask_card_number
+from src.masks import get_mask_card_number, get_mask_account
 
 
 class TestMasks:
-    """Тесты для функций маскировки."""
-    
-    def test_mask_account_number_valid(self):
-        """Тест маскировки корректного номера счета."""
-        result = mask_account_number("12345678901234567890")
-        assert result == "**7890"
-        
-    def test_mask_account_number_short(self):
-        """Тест маскировки короткого номера счета."""
-        result = mask_account_number("123")
-        assert result is None
-        
-    def test_mask_account_number_empty(self):
-        """Тест маскировки пустого номера счета."""
-        result = mask_account_number("")
-        assert result is None
-        
-    def test_mask_card_number_valid(self):
-        """Тест маскировки корректного номера карты."""
-        result = mask_card_number("1234567890123456")
+    """Тестовые случаи для функций масок."""
+
+    def test_get_mask_card_number_valid(self):
+        """Тест маски номера карты с корректным номером."""
+        result = get_mask_card_number("1234567890123456")
         assert result == "1234 56** **** 3456"
-        
-    def test_mask_card_number_invalid(self):
-        """Тест маскировки некорректного номера карты."""
-        result = mask_card_number("1234567890")
-        assert result is None
+
+    def test_get_mask_card_number_invalid(self):
+        """Тест маски номера карты с некорректным номером."""
+        result = get_mask_card_number("1234")
+        assert result == "Некорректный номер карты"
+
+    def test_get_mask_account_valid(self):
+        """Тест маски номера счета с корректным номером."""
+        result = get_mask_account("12345678901234567890")
+        assert result == "**7890"
+
+    def test_get_mask_account_invalid(self):
+        """Тест маски номера счета с некорректным номером."""
+        result = get_mask_account("1234")
+        assert result == "Некорректный номер счета"
+
+
+if __name__ == "__main__":
+    import pytest
+    pytest.main()
