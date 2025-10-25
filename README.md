@@ -1,12 +1,15 @@
-## Работа с данными и API
+@"
+# Financial Transactions Processor
 
-### Чтение JSON файлов
+Проект для обработки финансовых транзакций из различных форматов файлов.
 
-Модуль `utils` предоставляет функции для работы с файлами данных.
+## Новая функциональность
 
-```python
-from src.utils import read_json_file
+Добавлена поддержка чтения транзакций из:
+- CSV файлов (`read_csv_file`)
+- Excel файлов (`read_excel_file`)
 
-# Чтение данных из JSON файла
-transactions = read_json_file("data/operations.json")
-print(f"Загружено {len(transactions)} транзакций")
+## Установка
+
+```bash
+pip install -r requirements.txt
