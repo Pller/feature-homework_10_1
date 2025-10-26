@@ -46,3 +46,19 @@
 2025-10-25 14:40:06 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из CSV
 2025-10-25 14:40:06 - file_reader - DEBUG - Чтение Excel файла: data/transactions_excel.xlsx
 2025-10-25 14:40:06 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из Excel
+2025-10-25 23:34:22 - file_reader - DEBUG - Чтение CSV файла: data/transactions.csv
+2025-10-25 23:34:22 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из CSV
+2025-10-25 23:34:22 - file_reader - DEBUG - Чтение Excel файла: data/transactions_excel.xlsx
+2025-10-25 23:34:23 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из Excel
+2025-10-25 23:34:23 - file_reader - DEBUG - Чтение CSV файла: data/transactions.csv
+2025-10-25 23:34:23 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из CSV
+2025-10-25 23:34:23 - file_reader - DEBUG - Чтение Excel файла: data/transactions_excel.xlsx
+2025-10-25 23:34:23 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из Excel
+2025-10-25 23:34:27 - file_reader - DEBUG - Чтение CSV файла: data/transactions.csv
+2025-10-25 23:34:27 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из CSV
+2025-10-25 23:34:27 - file_reader - DEBUG - Чтение Excel файла: data/transactions_excel.xlsx
+2025-10-25 23:34:28 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из Excel
+2025-10-25 23:34:28 - file_reader - DEBUG - Чтение CSV файла: data/transactions.csv
+2025-10-25 23:34:28 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из CSV
+2025-10-25 23:34:28 - file_reader - DEBUG - Чтение Excel файла: data/transactions_excel.xlsx
+2025-10-25 23:34:28 - file_reader - DEBUG - Успешно прочитано 1000 транзакций из Excel
