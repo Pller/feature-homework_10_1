@@ -2,7 +2,7 @@ import json
 from src.utils import read_json_file
 
 # Читаем файл и смотрим структуру
-transactions = read_json_file('data/operations.json')
+transactions = read_json_file('../data/operations.json')
 print(f"Всего транзакций: {len(transactions)}")
 
 # Покажем первую транзакцию для примера
